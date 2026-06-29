@@ -1,13 +1,17 @@
+import { RequestContext } from "./context";
+
+export type Middleware = (
+  context: RequestContext
+) => Promise<Response | null>;
+
 export type RouteHandler = (
-  request: Request,
-  env: Env,
-  params: RegExpMatchArray,
-  corsHeaders: HeadersInit
+  context: RequestContext
 ) => Promise<Response>;
 
 export interface Route {
   method: string;
   pattern: RegExp;
+  middlewares?: Middleware[];
   handler: RouteHandler;
 }
 
@@ -32,14 +36,28 @@ export class Router {
 
       const match = pathname.match(route.pattern);
 
-      if (match) {
-        return route.handler(
-          request,
-          env,
-          match,
-          corsHeaders
-        );
+      if (!match) {
+        continue;
       }
+
+      const context: RequestContext = {
+        request,
+        env,
+        params: match,
+        corsHeaders,
+      };
+
+      if (route.middlewares) {
+        for (const middleware of route.middlewares) {
+          const response = await middleware(context);
+
+          if (response) {
+            return response;
+          }
+        }
+      }
+
+      return route.handler(context);
     }
 
     return null;
