@@ -1,5 +1,5 @@
 import { Route } from "../router";
-import { createGift } from "./gifts";
+import { createGift, getGift } from "./gifts";
 
 export const giftRoutes: Route[] = [
   {
@@ -7,4 +7,10 @@ export const giftRoutes: Route[] = [
     pattern: /^\/api\/gifts\/create$/,
     handler: createGift,
   },
+  {
+    method: "GET",
+    pattern: /^\/api\/gifts\/([^/]+)$/,
+    handler: getGift,
+  },
 ];
+

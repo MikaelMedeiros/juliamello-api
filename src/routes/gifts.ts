@@ -53,3 +53,47 @@ export async function createGift(
     201
   );
 }
+
+export async function getGift(
+  request: Request,
+  env: Env,
+  params: RegExpMatchArray,
+  corsHeaders: HeadersInit
+): Promise<Response> {
+
+  const RATE_LIMIT_MAX = Number(env.RATE_LIMIT_MAX ?? 10);
+  const RATE_LIMIT_TTL_SECONDS = Number(env.RATE_LIMIT_TTL_SECONDS ?? 300);
+
+  if (!(await checkRateLimit(request, env, RATE_LIMIT_MAX, RATE_LIMIT_TTL_SECONDS))) {
+    return json(
+      { error: "Muitas tentativas. Tente novamente mais tarde." },
+      corsHeaders,
+      429
+    );
+  }
+
+  if (!validateApiKey(request, env)) {
+    return json(
+      { error: "Inautorizado!" },
+      corsHeaders,
+      401
+    );
+  }
+
+  const giftId = params[1];
+
+  const gift = await env.GIFTS.get(`gift:${giftId}`);
+
+  if (!gift) {
+    return json(
+      { error: "Esse gift não existe." },
+      corsHeaders,
+      404
+    );
+  }
+
+  return json(
+    JSON.parse(gift),
+    corsHeaders
+  );
+}
