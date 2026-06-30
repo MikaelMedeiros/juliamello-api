@@ -2,6 +2,7 @@ import { json } from "../response";
 
 import { RequestContext } from "../context";
 import { ClaimGiftRequest } from "../models/claim-gift.request";
+import { Gift } from "../models/gift";
 
 export async function createGift(
   context: RequestContext
@@ -130,6 +131,78 @@ export async function claimGift(
     expiresAt.setMonth(expiresAt.getMonth() + expirationMonths);
 
     gift.expiresAt = expiresAt.toISOString();
+
+    await env.GIFTS.put(
+        `gift:${giftId}`,
+        JSON.stringify(gift)
+    );
+
+    return json(
+        gift,
+        corsHeaders
+    );
+}
+
+export async function validateGift(
+  context: RequestContext
+): Promise<Response> {
+
+    const {        
+        env,
+        params,
+        corsHeaders
+    } = context;    
+
+    const giftId = params[1];
+
+    const giftRaw = await env.GIFTS.get(
+        `gift:${giftId}`
+    );
+
+    if (!giftRaw) {
+        return json(
+            { error: "Não encontrei esse Gift :/" },
+            corsHeaders,
+            404
+        );
+    }
+
+    const gift: Gift = JSON.parse(giftRaw);
+
+    if (gift.used) {
+        return json(
+            { error: "Esse gift já foi utilizado :(" },
+            corsHeaders,
+            409
+        );
+    }
+
+    if (!gift.claimed) {
+        return json(
+            { error: "Impossível usar um Gift que não foi resgatado ¬¬" },
+            corsHeaders,
+            409
+        );
+    }
+
+    if (!gift.expiresAt) {
+        return json(
+            { error: "Gift inválido." },
+            corsHeaders,
+            500
+        );
+    }
+
+    if (new Date(gift.expiresAt) < new Date()) {
+        return json(
+            { error: "Demorou muito para usar e acabou expirando ):" },
+            corsHeaders,
+            409
+        );
+    }
+
+    gift.used = true;
+    gift.usedAt = new Date().toISOString();
 
     await env.GIFTS.put(
         `gift:${giftId}`,
