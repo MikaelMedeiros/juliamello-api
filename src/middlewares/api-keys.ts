@@ -19,4 +19,5 @@ export const apiKeyMiddleware: Middleware = async (
     corsHeaders,
     401
   );
-};
+}
+;

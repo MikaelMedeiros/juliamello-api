@@ -1,13 +1,13 @@
-import { validateApiKey } from "../auth";
 import { json } from "../response";
 
 import { RequestContext } from "../context";
+import { ClaimGiftRequest } from "../models/claim-gift.request";
 
 export async function createGift(
   context: RequestContext
 ): Promise<Response> {
 
-  const { request, env, corsHeaders } = context;
+  const { env, corsHeaders } = context;
 
   const giftId = "GFT-" + crypto.randomUUID().substring(0, 8);
 
@@ -37,19 +37,10 @@ export async function createGift(
 }
 
 export async function getGift(
-  request: Request,
-  env: Env,
-  params: RegExpMatchArray,
-  corsHeaders: HeadersInit
-): Promise<Response> { 
+  context: RequestContext
+): Promise<Response> {
 
-  if (!validateApiKey(request, env)) {
-    return json(
-      { error: "Inautorizado!" },
-      corsHeaders,
-      401
-    );
-  }
+  const { params, env, corsHeaders } = context;   
 
   const giftId = params[1];
 
@@ -67,4 +58,86 @@ export async function getGift(
     JSON.parse(gift),
     corsHeaders
   );
+}
+
+export async function claimGift(
+  context: RequestContext
+): Promise<Response> {
+
+    const {
+        env,
+        params,
+        corsHeaders
+    } = context;
+
+    const body = context.body as ClaimGiftRequest;
+
+    const giftId = params[1];
+
+    if (!body?.name?.trim()) {
+        return json(
+        { error: "Faltou informar o nome :(" },
+        corsHeaders,
+        400
+        );
+    }
+
+    if (!body?.phone?.trim()) {
+        return json(
+        { error: "Esqueceu de digitar seu WhatsApp u_u" },
+        corsHeaders,
+        400
+        );
+    }
+
+    const giftRaw = await env.GIFTS.get(`gift:${giftId}`);
+
+    if (!giftRaw) {
+        return json(
+            { error: "Esse gift não existe e_e" },
+            corsHeaders,
+            404
+        );
+    }
+
+    const gift = JSON.parse(giftRaw);
+
+    if (gift.used) {
+        return json(
+            { error: "Esse gift já foi utilizado e-e" },
+            corsHeaders,
+            409
+        );
+    }
+
+    if (gift.claimed) {
+        return json(
+            { error: "Já resgataram esse, hein e-e" },
+            corsHeaders,
+            409
+        );
+    }
+
+    gift.claimed = true;
+    gift.claimedAt = new Date().toISOString();
+    gift.name = body.name;
+    gift.phone = body.phone.replace(/\D/g, "");
+    gift.used = false;
+    gift.usedAt = null;
+
+    const expirationMonths = Number(env.EXPIRATION_MONTHS ?? 6);
+    const expiresAt = new Date();
+    expiresAt.setMonth(expiresAt.getMonth() + expirationMonths);
+
+    gift.expiresAt = expiresAt.toISOString();
+
+    await env.GIFTS.put(
+        `gift:${giftId}`,
+        JSON.stringify(gift)
+    );
+
+    return json(
+        gift,
+        corsHeaders
+    );
 }

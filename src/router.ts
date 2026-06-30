@@ -47,6 +47,16 @@ export class Router {
         corsHeaders,
       };
 
+      if (
+        ["POST", "PUT", "PATCH"].includes(request.method)
+      ) {
+        const contentType = request.headers.get("content-type") ?? "";
+
+        if (contentType.includes("application/json")) {
+          context.body = await request.json();
+        }
+      }
+
       if (route.middlewares) {
         for (const middleware of route.middlewares) {
           const response = await middleware(context);
