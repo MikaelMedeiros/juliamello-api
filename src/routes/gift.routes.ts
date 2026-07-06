@@ -1,7 +1,7 @@
 import { apiKeyMiddleware } from "../middlewares/api-keys";
 import { rateLimitMiddleware } from "../middlewares/rate-limit";
 import { Route } from "../router";
-import { createGift, getGift, claimGift, validateGift } from "./gifts";
+import { createGift, getGift, claimGift, validateGift, listGifts } from "./gifts";
 
 export const giftRoutes: Route[] = [
   {
@@ -18,6 +18,12 @@ export const giftRoutes: Route[] = [
     pattern: /^\/api\/gifts\/([^/]+)$/,
     middlewares: [apiKeyMiddleware],
     handler: getGift,
+  },
+  {
+    method: "GET",
+    pattern: /^\/api\/gifts$/,
+    middlewares: [apiKeyMiddleware],
+    handler: listGifts,
   },
   {
     method: "POST",
