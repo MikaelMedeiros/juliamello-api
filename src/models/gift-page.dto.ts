@@ -1,7 +1,8 @@
 import { Gift } from "./gift";
 
 export interface GiftPageDto {
-  items: Gift[];
-  cursor?: string;
-  hasNext: boolean;
+    items: Gift[];
+    total: number;
+    page: number;
+    pageSize: number;
 }

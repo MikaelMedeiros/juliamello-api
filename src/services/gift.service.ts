@@ -40,24 +40,19 @@ export class GiftService {
   }
 
   async validate(
-    giftId: string,
-    repository: GiftRepository  
+    giftId: string
   ): Promise<Gift> {
 
-    const gift: Gift | null = await repository.findById(giftId);
+    const gift = await this.repository.findById(giftId);
 
     GiftValidator.validateUse(gift);
 
     gift.used = true;
     gift.usedAt = new Date().toISOString();
 
-    await repository.save(gift);
+    await this.repository.save(gift);
 
     return gift;
   }
 
 }
-
-
-
- 

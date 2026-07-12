@@ -21,6 +21,14 @@
 			"remote": true
 		}
 	],
+	"d1_databases": [		
+		{
+			"binding": "app_db",
+			"database_name": "app-db",
+			"database_id": "30f4d5ec-51f6-4423-a82c-f23d9d8430b8",
+			"remote": true
+		}
+	],
 	/**
 	 * Smart Placement
 	 * https://developers.cloudflare.com/workers/configuration/smart-placement/#smart-placement
@@ -39,7 +47,6 @@
 	 * https://developers.cloudflare.com/workers/configuration/secrets/
 	 */
 	// "vars": {  				
-		
 	//  }
 	/**
 	 * Static Assets

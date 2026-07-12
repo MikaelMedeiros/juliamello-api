@@ -3,10 +3,12 @@ import { json } from "../response";
 import { RequestContext } from "../context";
 import { ClaimGiftRequest } from "../models/claim-gift.request";
 import { Gift } from "../models/gift";
-import { KvGiftRepository } from "../repositories/kv-gift.repository";
+import { GiftFilterDto } from "../models/gift-filter.dto";
+import { D1GiftRepository } from "../repositories/d1-gift.repository";
 import { GiftService } from "../services/gift.service";
 import { handleError } from "../exceptions/erro.handler";
-import { GiftFilterDto } from "../models/gift-filter.dto";
+import { AppException } from "../exceptions/app.exception";
+import { GiftSearchValidator } from "../validator/gift-search.validator";
 
 export async function createGift(
   context: RequestContext
@@ -14,7 +16,7 @@ export async function createGift(
 
   const { env, corsHeaders } = context;
 
-  const repository = new KvGiftRepository(env);
+  const repository = new D1GiftRepository(env);
 
   const giftId = "GFT-" + crypto.randomUUID().substring(0, 8);
 
@@ -22,8 +24,10 @@ export async function createGift(
     id: giftId,
     createdAt: new Date().toISOString(),
     claimed: false,
+    claimedAt: null,
     used: false,
     usedAt: null,
+    expiresAt: null,
     name: null,
     phone: null,
   };
@@ -46,11 +50,9 @@ export async function getGift(
 
   const { params, env, corsHeaders } = context;
 
-  const giftId = params[1];
+  const repository = new D1GiftRepository(env);
 
-  const repository = new KvGiftRepository(env);
-
-  const gift = await repository.findById(giftId);
+  const gift = await repository.findById(params[1]);
 
   if (!gift) {
     return json(
@@ -66,42 +68,37 @@ export async function getGift(
   );
 }
 
-export async function listGifts(
+export async function searchGifts(
   context: RequestContext
 ): Promise<Response> {
 
-  const { request, corsHeaders } = context;
+  const { env, corsHeaders } = context;
 
-  const url = new URL(request.url);
-
-  const filter: GiftFilterDto = {
-    cursor: url.searchParams.get("cursor") ?? undefined,
-    pageSize: Number(url.searchParams.get("pageSize") ?? 20),
-    claimed: parseBoolean(url.searchParams.get("claimed")),
-    used: parseBoolean(url.searchParams.get("used"))
-  };
-
-  const repository = new KvGiftRepository(context.env);
-
-  try {
-    const page = await repository.findAll(filter);
   
-    return json(page, corsHeaders, 200);
+  const repository = new D1GiftRepository(env);
+  
+  const filter = context.body as GiftFilterDto;
+  
+  try {
+
+    GiftSearchValidator.validate(filter);
+
+    const page = await repository.findAll(filter);
+
+    return json(
+      page,
+      corsHeaders,
+      200
+    );
+
   } catch (error) {
+
     return handleError(
       error,
       corsHeaders
     );
+
   }
-}
-
-function parseBoolean(value: string | null): boolean | undefined {
-
-  if (value === null) {
-    return undefined;
-  }
-
-  return value === "true";
 }
 
 export async function claimGift(
@@ -114,51 +111,71 @@ export async function claimGift(
     corsHeaders
   } = context;
 
+  const repository = new D1GiftRepository(env);
+
+  const service = new GiftService(
+    repository,
+    Number(env.EXPIRATION_MONTHS ?? 6)
+  );
+
   const body = context.body as ClaimGiftRequest;
 
-  const giftId = params[1];
-
-  const service = new GiftService( new KvGiftRepository(env), Number(env.EXPIRATION_MONTHS ?? 6) );
-
   try {
-    const gift = await service.claim(giftId, body);
+
+    const gift = await service.claim(
+      params[1],
+      body
+    );
+
     return json(
-    gift,
-    corsHeaders
+      gift,
+      corsHeaders
     );
+
   } catch (error) {
+
     return handleError(
-        error,
-        corsHeaders
+      error,
+      corsHeaders
     );
-  }  
+
+  }
 }
 
 export async function validateGift(
   context: RequestContext
 ): Promise<Response> {
 
-    const {        
-        env,
-        params,
-        corsHeaders
-    } = context;    
+  const {
+    env,
+    params,
+    corsHeaders
+  } = context;
 
-    const giftId = params[1];
+  const repository = new D1GiftRepository(env);
 
-    const service = new GiftService( new KvGiftRepository(env), Number(env.EXPIRATION_MONTHS ?? 6) );
+  const service = new GiftService(
+    repository,
+    Number(env.EXPIRATION_MONTHS ?? 6)
+  );
 
-    try {
-      const gift = await service.validate(giftId, new KvGiftRepository(env));
-  
-      return json(
-          gift,
-          corsHeaders
-      );
-    } catch (error) {
-      return handleError(
-          error,
-          corsHeaders
-      );
-    }  
+  try {
+
+    const gift = await service.validate(
+      params[1]
+    );
+
+    return json(
+      gift,
+      corsHeaders
+    );
+
+  } catch (error) {
+
+    return handleError(
+      error,
+      corsHeaders
+    );
+
+  }
 }
