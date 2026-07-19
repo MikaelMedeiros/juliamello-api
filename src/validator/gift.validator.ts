@@ -24,10 +24,10 @@ export class GiftValidator {
 
     const phone = request.phone.trim();
 
-    if (!/^\d{2}9\d{8}$/.test(phone)) {
+    if (!/^\+?\d{8,15}$/.test(phone)) {
       throw new AppException(
         "WhatsApp inválido.",
-        400
+         400
       );
     }
 

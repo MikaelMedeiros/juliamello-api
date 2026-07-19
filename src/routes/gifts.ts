@@ -7,7 +7,6 @@ import { GiftFilterDto } from "../models/gift-filter.dto";
 import { D1GiftRepository } from "../repositories/d1-gift.repository";
 import { GiftService } from "../services/gift.service";
 import { handleError } from "../exceptions/erro.handler";
-import { AppException } from "../exceptions/app.exception";
 import { GiftSearchValidator } from "../validator/gift-search.validator";
 
 export async function createGift(

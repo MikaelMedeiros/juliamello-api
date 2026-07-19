@@ -16,6 +16,7 @@ export interface Route {
 }
 
 export class Router {
+
   constructor(
     private readonly routes: Route[]
   ) {}
@@ -47,29 +48,37 @@ export class Router {
         corsHeaders,
       };
 
-      if (
-        ["POST", "PUT", "PATCH"].includes(request.method)
-      ) {
-        const contentType = request.headers.get("content-type") ?? "";
+      if (["POST", "PUT", "PATCH"].includes(request.method)) {
+
+        const contentType =
+          request.headers.get("content-type") ?? "";
 
         if (contentType.includes("application/json")) {
           context.body = await request.json();
         }
+
       }
 
       if (route.middlewares) {
+
         for (const middleware of route.middlewares) {
+
           const response = await middleware(context);
 
           if (response) {
             return response;
           }
+
         }
+
       }
 
-      return route.handler(context);
+      return await route.handler(context);
+
     }
 
     return null;
+
   }
+
 }

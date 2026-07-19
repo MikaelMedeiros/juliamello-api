@@ -1,4 +1,4 @@
-import { apiKeyMiddleware } from "../middlewares/api-keys";
+import { jwtAuthMiddleware } from "../middlewares/jwt-auth";
 import { rateLimitMiddleware } from "../middlewares/rate-limit";
 import { Route } from "../router";
 import { createGift, getGift, claimGift, validateGift, searchGifts } from "./gifts";
@@ -9,20 +9,20 @@ export const giftRoutes: Route[] = [
     pattern: /^\/api\/gifts\/create$/,
     middlewares: [
       rateLimitMiddleware, 
-      apiKeyMiddleware,
+      jwtAuthMiddleware,
     ],
     handler: createGift,
   },
   {
     method: "GET",
     pattern: /^\/api\/gifts\/([^/]+)$/,
-    middlewares: [apiKeyMiddleware],
+    middlewares: [jwtAuthMiddleware],
     handler: getGift,
   },
   {
     method: "POST",
     pattern: /^\/api\/gifts\/search$/,
-    middlewares: [apiKeyMiddleware],
+    middlewares: [jwtAuthMiddleware],
     handler: searchGifts,
   },
   {
@@ -36,7 +36,7 @@ export const giftRoutes: Route[] = [
     pattern: /^\/api\/gifts\/([^/]+)\/validate$/,
     middlewares: [
       rateLimitMiddleware,
-      apiKeyMiddleware,
+      jwtAuthMiddleware,
     ],
     handler: validateGift,
   }

@@ -1,10 +1,12 @@
 import { getCorsHeaders } from "./cors";
 import { json } from "./response";
 import { Router } from "./router";
+import { authRoutes } from "./routes/auth.routes";
 import { giftRoutes } from "./routes/gift.routes";
 
 const router = new Router([
   ...giftRoutes,
+  ...authRoutes
 ]);
 
 export default {
