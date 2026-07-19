@@ -33,7 +33,7 @@ export class GiftService {
     );
 
     gift.expiresAt = expiresAt.toISOString();
-
+    console.log("GiftService.claim: gift =", gift);
     await this.repository.save(gift);
 
     return gift;

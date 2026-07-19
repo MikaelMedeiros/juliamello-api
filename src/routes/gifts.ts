@@ -29,6 +29,8 @@ export async function createGift(
     expiresAt: null,
     name: null,
     phone: null,
+    createdBy: context.user?.id ?? "system",
+    organizationId: context.user?.organizationId ?? "default",
   };
 
   await repository.save(gift);
@@ -82,7 +84,10 @@ export async function searchGifts(
 
     GiftSearchValidator.validate(filter);
 
-    const page = await repository.findAll(filter);
+    const page = await repository.findAll(
+      filter,
+      context.user!.organizationId    
+    );
 
     return json(
       page,

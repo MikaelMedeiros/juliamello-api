@@ -7,7 +7,9 @@ export interface GiftRepository {
   findById(id: string): Promise<Gift | null>;
 
   findAll(
-    filter: GiftFilterDto
+    filter: GiftFilterDto,
+    organizationId: string,
+    createdByUserId?: string
   ): Promise<GiftPageDto>;
 
   save(gift: Gift): Promise<void>;

@@ -22,7 +22,9 @@ export class D1GiftRepository implements GiftRepository {
           created_at as createdAt,
           expires_at as expiresAt,
           claimed_at as claimedAt,
-          used_at as usedAt
+          used_at as usedAt,          
+          created_by_user_id as createdBy,
+          organization_id as organizationId              
         FROM gifts
         WHERE id = ?
       `)
@@ -33,11 +35,23 @@ export class D1GiftRepository implements GiftRepository {
   }
 
   async findAll(
-    filter: GiftFilterDto
+    filter: GiftFilterDto,
+    organizationId: string,
+    createdByUserId?: string
   ): Promise<GiftPageDto> {
 
-    const conditions: string[] = [];
-    const params: unknown[] = [];
+    const conditions: string[] = [
+    "organization_id = ?"
+    ];
+
+    const params: unknown[] = [
+        organizationId
+    ];
+
+    if (createdByUserId) {
+        conditions.push("created_by_user_id = ?");
+        params.push(createdByUserId);
+    }
 
     if (filter.claimed !== undefined) {
       conditions.push("claimed = ?");
@@ -131,9 +145,11 @@ export class D1GiftRepository implements GiftRepository {
           created_at,
           expires_at,
           claimed_at,
-          used_at
+          used_at,
+          created_by_user_id,
+          organization_id
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ON CONFLICT(id)
         DO UPDATE SET
           name = excluded.name,
@@ -143,7 +159,9 @@ export class D1GiftRepository implements GiftRepository {
           created_at = excluded.created_at,
           expires_at = excluded.expires_at,
           claimed_at = excluded.claimed_at,
-          used_at = excluded.used_at
+          used_at = excluded.used_at,
+          organization_id = excluded.organization_id,
+          created_by_user_id = excluded.created_by_user_id
       `)
       .bind(
         gift.id,
@@ -154,7 +172,9 @@ export class D1GiftRepository implements GiftRepository {
         gift.createdAt,
         gift.expiresAt,
         gift.claimedAt,
-        gift.usedAt
+        gift.usedAt,
+        gift.createdBy,
+        gift.organizationId
       )
       .run();
   }

@@ -8,4 +8,6 @@ export interface Gift {
   expiresAt: string | null;
   name: string | null;
   phone: string | null;
+  createdBy: string;
+  organizationId: string;
 }

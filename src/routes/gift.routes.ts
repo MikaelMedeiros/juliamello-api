@@ -16,7 +16,7 @@ export const giftRoutes: Route[] = [
   {
     method: "GET",
     pattern: /^\/api\/gifts\/([^/]+)$/,
-    middlewares: [jwtAuthMiddleware],
+    middlewares: [rateLimitMiddleware],
     handler: getGift,
   },
   {
