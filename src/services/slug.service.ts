@@ -1,5 +1,3 @@
-import { OrganizationRepository } from "../repositories/auth/organization.repository";
-
 export class SlugService {
 
   slugify(value: string): string {
@@ -15,7 +13,7 @@ export class SlugService {
 
   async generateUniqueSlug(
     name: string,
-    repository: OrganizationRepository
+    findBySlug: (slug: string) => Promise<unknown>
   ): Promise<string> {
 
     const base = this.slugify(name);
@@ -23,12 +21,11 @@ export class SlugService {
     let slug = base;
     let count = 1;
 
-    while (await repository.findBySlug(slug)) {
+    while (await findBySlug(slug)) {
       slug = `${base}-${count++}`;
     }
 
     return slug;
-
   }
 
 }

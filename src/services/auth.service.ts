@@ -104,6 +104,7 @@ constructor(
     const token = await this.jwtService.sign({
         sub: user.id,
         organizationId: organization.id,
+        organizationSlug: organization.slug,
         role: organizationUser.role,
         email: user.email,
         name: user.name
@@ -129,7 +130,7 @@ constructor(
         name: googleUser.name,
         slug: await this.slugService.generateUniqueSlug(
         googleUser.name,
-        this.organizations
+        slug => this.organizations.findBySlug(slug)
         ),
         createdAt: now,
         updatedAt: now
@@ -173,6 +174,7 @@ constructor(
     const token = await this.jwtService.sign({
         sub: user.id,
         organizationId: organization.id,
+        organizationSlug: organization.slug,
         role: "OWNER",
         email: user.email,
         name: user.name

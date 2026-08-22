@@ -1,7 +1,7 @@
 import { jwtAuthMiddleware } from "../middlewares/jwt-auth";
 import { rateLimitMiddleware } from "../middlewares/rate-limit";
 import { Route } from "../router";
-import { createGift, getGift, claimGift, validateGift, searchGifts } from "./gifts";
+import { createGift, getGift, claimGift, validateGift, searchGifts } from "../handlers/gifts";
 
 export const giftRoutes: Route[] = [
   {

@@ -3,6 +3,7 @@ import { JWTPayload, SignJWT, jwtVerify } from "jose";
 export interface JwtPayload extends JWTPayload {
   sub: string;
   organizationId: string;
+  organizationSlug: string;
   role: "OWNER" | "ADMIN" | "STAFF";
   email: string;
   name: string;
@@ -34,6 +35,7 @@ export class JwtService {
     return {
       sub: payload.sub!,
       organizationId: payload.organizationId as string,
+      organizationSlug: payload.organizationSlug as string,
       role: payload.role as JwtPayload["role"],
       email: payload.email as string,
       name: payload.name as string,

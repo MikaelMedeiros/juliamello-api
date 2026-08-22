@@ -29,6 +29,7 @@ export async function jwtAuthMiddleware(
       id: payload.sub,
       email: payload.email,
       name: payload.name,
+      organizationSlug: payload.organizationSlug,
       organizationId: payload.organizationId,
       role: payload.role
     };
