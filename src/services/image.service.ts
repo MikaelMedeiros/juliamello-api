@@ -1,8 +1,8 @@
+import { error } from "console";
 import { Image } from "../models/image";
 import { ImageResponse } from "../models/image.response";
 import { ImageStorage } from "../repositories/image-upload/image-storage";
 import { ImageRepository } from "../repositories/image-upload/image.repository";
-import { ImageUploadValidator } from "../validator/file-upload.validator";
 
 export class ImageService {
 
@@ -22,11 +22,13 @@ export class ImageService {
 
     const id = crypto.randomUUID();
 
+    const userSlug = email.split("@")[0];
+    
+    const folder =`${organizationSlug}/${userSlug}/${section}`;
+
     const key = crypto.randomUUID();
 
-    const userSlug = email.split("@")[0];
-
-    const folder =`${organizationSlug}/${userSlug}/${section}`;
+    const storageKey = `${folder}/${key}`;
 
     try {
 
@@ -47,9 +49,9 @@ export class ImageService {
         filename: file.name,
         contentType: file.type,
         size: file.size,
-        section: "portfolio",
+        section: section,
         createdAt: new Date().toISOString(),
-      };
+      };      
 
       await this.repository.create(image);
 
@@ -59,6 +61,7 @@ export class ImageService {
         width: image.width,
         height: image.height,
         filename: image.filename,
+        section: image.section,
         contentType: image.contentType,
         size: image.size
       };
@@ -66,11 +69,11 @@ export class ImageService {
     } catch (error) {
 
       // Se a imagem chegou na Cloudinary mas o D1 falhou,
-      // tenta remover a imagem para não deixar lixo no storage.
+      // tenta remover a imagem para não deixar lixo no storage.      
       try {
-        await this.storage.delete(key);
+        await this.storage.delete(storageKey);
       } catch {
-        // Mantém o erro original.
+        throw new Error(`Failed to delete image from storage after D1 failure AND: ${error}`);              
       }
 
       throw error;

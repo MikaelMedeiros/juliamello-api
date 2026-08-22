@@ -6,12 +6,21 @@ export interface ImageRepository {
     image: Image
   ): Promise<void>;
 
-  findByIdAndOrganizationId(
+  findById(
     id: string,
-    organizationId: string
+    organizationId: string,
+    userId: string
   ): Promise<Image | null>;
 
+  findBySection(
+    section: string,
+    organizationId: string,
+    userId: string
+  ): Promise<Image[]>;
+
   delete(
-    id: string
+    id: string,
+    organizationId: string,
+    userId: string
   ): Promise<void>;
 }

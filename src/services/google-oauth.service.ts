@@ -11,8 +11,7 @@ export interface GoogleOAuthUser {
   picture?: string;
 }
 
-export interface GoogleOAuthTokens {
-  accessToken: string;
+export interface GoogleOAuthTokens {  
   refreshToken?: string;
   idToken: string;
   expiresIn: number;
@@ -56,9 +55,7 @@ export class GoogleOAuthService {
 
     const json = await response.json<any>();
 
-    return {
-
-        accessToken: json.access_token,
+    return {        
 
         refreshToken: json.refresh_token,
 

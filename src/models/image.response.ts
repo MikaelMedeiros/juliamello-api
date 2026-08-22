@@ -4,6 +4,7 @@ export interface ImageResponse {
   width: number;
   height: number;
   filename: string;
+  section: string;
   contentType: string;
   size: number;
 }

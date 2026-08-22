@@ -31,8 +31,7 @@ export class D1OAuthAccountRepository implements OAuthAccountRepository {
           id,
           user_id,
           provider,
-          provider_user_id,
-          access_token,
+          provider_user_id,          
           refresh_token,
           expires_at,
           created_at,
@@ -60,15 +59,13 @@ export class D1OAuthAccountRepository implements OAuthAccountRepository {
     await this.env.app_db
       .prepare(`
         UPDATE oauth_accounts
-        SET
-          access_token = ?,
+        SET          
           refresh_token = ?,
           expires_at = ?,
           updated_at = ?
         WHERE id = ?
       `)
-      .bind(
-        account.accessToken ?? null,
+      .bind(        
         account.refreshToken ?? null,
         account.expiresAt ?? null,
         account.updatedAt,
@@ -102,8 +99,7 @@ export class D1OAuthAccountRepository implements OAuthAccountRepository {
       id: row.id,
       userId: row.user_id,
       provider: row.provider,
-      providerUserId: row.provider_user_id,
-      accessToken: row.access_token ?? undefined,
+      providerUserId: row.provider_user_id,      
       refreshToken: row.refresh_token ?? undefined,
       expiresAt: row.expires_at ?? undefined,
       createdAt: row.created_at,

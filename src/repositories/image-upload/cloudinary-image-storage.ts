@@ -133,7 +133,7 @@ export class CloudinaryImageStorageRepository
       throw new Error(
         `Cloudinary delete failed: ${error}`
       );
-    }
+    }    
   }
 
   private async generateSignature(

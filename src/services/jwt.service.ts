@@ -25,12 +25,13 @@ export class JwtService {
       .setIssuedAt()
       .setExpirationTime("7d")
       .sign(this.secret);
-
   }
 
   async verify(token: string): Promise<JwtPayload> {
 
     const { payload } = await jwtVerify(token, this.secret);
+
+    console.log("JWT Payload:", payload);
 
     return {
       sub: payload.sub!,
