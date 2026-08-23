@@ -23,4 +23,8 @@ export interface ImageRepository {
     organizationId: string,
     userId: string
   ): Promise<void>;
+
+  update(
+    image: Image
+  ): Promise<Image | null>;
 }

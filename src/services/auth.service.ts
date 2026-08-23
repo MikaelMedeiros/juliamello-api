@@ -99,10 +99,7 @@ constructor(
 
     const organizationUser = (
         await this.organizationUsers.findByUserId(user.id)
-    )[0];
-
-    console.log("Organization:", organization);
-    console.log("Organization slug:", organization.slug);
+    )[0];   
 
     const token = await this.jwtService.sign({
         sub: user.id,
@@ -173,9 +170,6 @@ constructor(
     };
 
     await this.oauthAccounts.save(oauthAccount);
-
-    console.log("Organization:", organization);
-    console.log("Organization slug:", organization.slug);
 
     const token = await this.jwtService.sign({
         sub: user.id,

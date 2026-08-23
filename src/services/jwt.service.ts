@@ -29,9 +29,7 @@ export class JwtService {
 
   async verify(token: string): Promise<JwtPayload> {
 
-    const { payload } = await jwtVerify(token, this.secret);
-
-    console.log("JWT Payload:", payload);
+    const { payload } = await jwtVerify(token, this.secret);    
 
     return {
       sub: payload.sub!,

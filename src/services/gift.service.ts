@@ -32,8 +32,7 @@ export class GiftService {
       expiresAt.getMonth() + this.expirationMonths
     );
 
-    gift.expiresAt = expiresAt.toISOString();
-    console.log("GiftService.claim: gift =", gift);
+    gift.expiresAt = expiresAt.toISOString();    
     await this.repository.save(gift);
 
     return gift;

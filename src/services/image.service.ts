@@ -1,4 +1,3 @@
-import { error } from "console";
 import { Image } from "../models/image";
 import { ImageResponse } from "../models/image.response";
 import { ImageStorage } from "../repositories/image-upload/image-storage";
@@ -79,4 +78,90 @@ export class ImageService {
       throw error;
     }
   }
-}
+
+  async findBySection(
+    section: string,
+    organizationId: string,
+    userId: string
+  ): Promise<Image[]> {
+    return this.repository.findBySection(section, organizationId, userId);
+  }
+
+  async delete(
+    id: string,
+    organizationId: string,
+    userId: string
+  ): Promise<void> {
+    try {
+      const imageUploaded = await this.repository.findById(id, organizationId, userId);
+      if (!imageUploaded) {
+        throw new Error(`Image with id ${id} not found for the given organization and user.`);
+      }
+      await this.storage.delete(imageUploaded.key);
+      await this.repository.delete(id, organizationId, userId);
+    } catch (error) {
+      throw new Error(`Failed to delete image: ${error}`);
+    }
+  }
+
+  async update(
+    id: string,
+    organizationId: string,
+    userId: string,
+    organizationSlug: string,
+    email: string,
+    file: File,
+    section: string
+  ): Promise<ImageResponse> {
+
+    const imageUploaded = await this.repository.findById(
+      id,
+      organizationId,
+      userId
+    );
+
+    if (!imageUploaded) {
+      throw new Error(`Image with id ${id} not found for the given organization and user.`);
+    }
+
+    const userSlug = email.split("@")[0];
+    const folder = `${organizationSlug}/${userSlug}/${section}`;
+    const key = crypto.randomUUID();
+    const storageResult = await this.storage.upload(
+      key,
+      folder,
+      file
+    );
+
+    const image: Image = {
+      ...imageUploaded,
+      key: storageResult.key,
+      url: storageResult.url,
+      width: storageResult.width,
+      height: storageResult.height,
+      filename: file.name,
+      contentType: file.type,
+      size: file.size,
+      section,
+    };
+
+    const updatedImage = await this.repository.update(image);
+    if (!updatedImage) {
+      throw new Error(`Failed to update image with id ${id}.`);
+    }
+
+    await this.storage.delete(imageUploaded.key);
+
+    return {
+      id: updatedImage.id,
+      url: updatedImage.url,
+      width: updatedImage.width,
+      height: updatedImage.height,
+      filename: updatedImage.filename,
+      section: updatedImage.section,
+      contentType: updatedImage.contentType,
+      size: updatedImage.size,
+    };
+
+  }
+}                 

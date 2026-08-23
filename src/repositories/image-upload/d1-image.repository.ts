@@ -156,4 +156,46 @@ export class D1ImageRepository
       .bind(id, organizationId, userId)
       .run();
   }
+
+  async update(
+    image: Image
+  ): Promise<Image | null> {  
+
+    const result = await this.db
+      .prepare(`
+        UPDATE images
+        SET
+          key = ?,
+          url = ?,
+          width = ?,
+          height = ?,
+          filename = ?,
+          content_type = ?,
+          size = ?,
+          section = ?
+        WHERE id = ?
+          AND organization_id = ?
+          AND user_id = ?
+      `)
+      .bind(
+        image.key,
+        image.url,
+        image.width,
+        image.height,
+        image.filename,
+        image.contentType,
+        image.size,
+        image.section,
+        image.id,
+        image.organizationId,
+        image.userId
+      )
+      .run();
+
+    if (!result) {
+      return null;
+    }
+
+    return image;
+  }
 }

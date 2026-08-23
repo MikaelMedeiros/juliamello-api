@@ -8,3 +8,10 @@ export function json(
     headers,
   });
 }
+
+export function noContent(headers?: HeadersInit): Response {
+  return new Response(null, {
+    status: 204,
+    headers,
+  });
+}
