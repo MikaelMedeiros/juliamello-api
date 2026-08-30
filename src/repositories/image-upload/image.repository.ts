@@ -12,6 +12,13 @@ export interface ImageRepository {
     userId: string
   ): Promise<Image | null>;
 
+  findBySlot(
+    section: string,
+    position: number,
+    organizationId: string,
+    userId: string
+  ): Promise<Image | null>;
+
   findBySection(
     section: string,
     organizationId: string,

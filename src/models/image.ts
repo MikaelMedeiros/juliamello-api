@@ -10,5 +10,6 @@ export interface Image {
   contentType: string;
   size: number;
   section: string;
+  position: number;
   createdAt: string;
 }

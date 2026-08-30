@@ -3,6 +3,15 @@ import { ImageResponse } from "../models/image.response";
 import { ImageStorage } from "../repositories/image-upload/image-storage";
 import { ImageRepository } from "../repositories/image-upload/image.repository";
 
+const SINGLE_IMAGE_SECTIONS =
+  new Set([
+    "banner",
+    "social-proof",
+    "about",
+  ]);
+
+const MAX_GALLERY_IMAGES = 12;
+
 export class ImageService {
 
   constructor(
@@ -14,69 +23,150 @@ export class ImageService {
     organizationId: string,
     userId: string,
     organizationSlug: string,
-    email: string,
     file: File,
-    section: string
-  ): Promise<ImageResponse> {    
+    section: string,
+    position: number
+  ): Promise<ImageResponse> {
 
-    const id = crypto.randomUUID();
+    this.validatePosition(
+      section,
+      position
+    );
 
-    const userSlug = email.split("@")[0];
-    
-    const folder =`${organizationSlug}/${userSlug}/${section}`;
+    // --------------------------------------------------------
+    // Procura se esse slot já possui uma imagem.
+    // --------------------------------------------------------
 
-    const key = crypto.randomUUID();
+    const existingImage =
+      await this.repository.findBySlot(
+        section,
+        position,
+        organizationId,
+        userId
+      );
 
-    const storageKey = `${folder}/${key}`;
+    // --------------------------------------------------------
+    // Define o caminho permanente do Cloudinary.
+    // --------------------------------------------------------
 
-    try {
+    const storagePath =
+      createImageStoragePath(
+        organizationSlug,
+        section,
+        position
+      );
 
-      const storageResult = await this.storage.upload(
-        key,
-        folder,
+    // --------------------------------------------------------
+    // Cloudinary:
+    //
+    // se existir -> overwrite
+    // se não existir -> create
+    //
+    // O public_id permanece o mesmo.
+    // --------------------------------------------------------
+
+    const storageResult =
+      await this.storage.upload(
+        storagePath.publicId,
+        storagePath.folder,
         file
       );
 
-      const image: Image = {
-        id,
-        organizationId,
-        userId,
-        key: storageResult.key,
-        url: storageResult.url,
-        width: storageResult.width,
-        height: storageResult.height,
-        filename: file.name,
-        contentType: file.type,
-        size: file.size,
-        section: section,
-        createdAt: new Date().toISOString(),
-      };      
+    const image: Image = {
 
-      await this.repository.create(image);
+      // ------------------------------------------------------
+      // O slot existente mantém seu UUID.
+      //
+      // Primeiro upload:
+      // cria UUID.
+      //
+      // Atualização:
+      // mantém UUID.
+      // ------------------------------------------------------
 
-      return {
-        id: image.id,
-        url: image.url,
-        width: image.width,
-        height: image.height,
-        filename: image.filename,
-        section: image.section,
-        contentType: image.contentType,
-        size: image.size
-      };
+      id:
+        existingImage?.id
+        ?? crypto.randomUUID(),
 
-    } catch (error) {
+      organizationId,
 
-      // Se a imagem chegou na Cloudinary mas o D1 falhou,
-      // tenta remover a imagem para não deixar lixo no storage.      
-      try {
-        await this.storage.delete(storageKey);
-      } catch {
-        throw new Error(`Failed to delete image from storage after D1 failure AND: ${error}`);              
+      userId,
+
+      // ------------------------------------------------------
+      // IMPORTANTE:
+      // não é mais UUID.
+      //
+      // É o public_id permanente do Cloudinary.
+      // ------------------------------------------------------
+
+      key:
+        storageResult.key,
+
+      url:
+        storageResult.url,
+
+      width:
+        storageResult.width,
+
+      height:
+        storageResult.height,
+
+      filename:
+        file.name,
+
+      contentType:
+        file.type,
+
+      size:
+        file.size,
+
+      section,
+
+      position,
+
+      // ------------------------------------------------------
+      // Uma substituição não altera createdAt.
+      // ------------------------------------------------------
+
+      createdAt:
+        existingImage?.createdAt
+        ?? new Date().toISOString(),
+    };
+
+    // --------------------------------------------------------
+    // Slot já existente -> UPDATE
+    // --------------------------------------------------------
+
+    if (existingImage) {
+
+      const updated =
+        await this.repository.update(
+          image
+        );
+
+      if (!updated) {
+
+        throw new Error(
+          "Failed to update image slot."
+        );
       }
 
-      throw error;
+      return this.toResponse(
+        updated
+      );
     }
+
+    // --------------------------------------------------------
+    // Slot ainda vazio -> CREATE
+    // --------------------------------------------------------
+
+    await this.repository.create(
+      image
+    );
+
+    return this.toResponse(
+      image
+    );
   }
 
   async findBySection(
@@ -84,84 +174,144 @@ export class ImageService {
     organizationId: string,
     userId: string
   ): Promise<Image[]> {
-    return this.repository.findBySection(section, organizationId, userId);
-  }
 
-  async delete(
-    id: string,
-    organizationId: string,
-    userId: string
-  ): Promise<void> {
-    try {
-      const imageUploaded = await this.repository.findById(id, organizationId, userId);
-      if (!imageUploaded) {
-        throw new Error(`Image with id ${id} not found for the given organization and user.`);
-      }
-      await this.storage.delete(imageUploaded.key);
-      await this.repository.delete(id, organizationId, userId);
-    } catch (error) {
-      throw new Error(`Failed to delete image: ${error}`);
-    }
-  }
-
-  async update(
-    id: string,
-    organizationId: string,
-    userId: string,
-    organizationSlug: string,
-    email: string,
-    file: File,
-    section: string
-  ): Promise<ImageResponse> {
-
-    const imageUploaded = await this.repository.findById(
-      id,
+    return this.repository.findBySection(
+      section,
       organizationId,
       userId
     );
+  }
 
-    if (!imageUploaded) {
-      throw new Error(`Image with id ${id} not found for the given organization and user.`);
+  async deleteBySlot(
+    section: string,
+    position: number,
+    organizationId: string,
+    userId: string
+  ): Promise<void> {
+
+    const image =
+      await this.repository.findBySlot(
+        section,
+        position,
+        organizationId,
+        userId
+      );
+
+    // Slot já está vazio.
+    if (!image) {
+      return;
     }
 
-    const userSlug = email.split("@")[0];
-    const folder = `${organizationSlug}/${userSlug}/${section}`;
-    const key = crypto.randomUUID();
-    const storageResult = await this.storage.upload(
-      key,
-      folder,
-      file
+    await this.storage.delete(
+      image.key
     );
 
-    const image: Image = {
-      ...imageUploaded,
-      key: storageResult.key,
-      url: storageResult.url,
-      width: storageResult.width,
-      height: storageResult.height,
-      filename: file.name,
-      contentType: file.type,
-      size: file.size,
-      section,
-    };
+    await this.repository.delete(
+      image.id,
+      organizationId,
+      userId
+    );
+  }
 
-    const updatedImage = await this.repository.update(image);
-    if (!updatedImage) {
-      throw new Error(`Failed to update image with id ${id}.`);
+  private validatePosition(
+    section: string,
+    position: number
+  ): void {
+
+    if (
+      !Number.isInteger(position) ||
+      position < 1
+    ) {
+
+      throw new Error(
+        "Invalid image position."
+      );
     }
 
-    await this.storage.delete(imageUploaded.key);
+    // Seção de imagem única.
+    if (
+      SINGLE_IMAGE_SECTIONS.has(section)
+      && position !== 1
+    ) {
+
+      throw new Error(
+        `Section ${section} only supports position 1.`
+      );
+    }
+
+    // Galerias.
+    if (
+      !SINGLE_IMAGE_SECTIONS.has(section)
+      && position > MAX_GALLERY_IMAGES
+    ) {
+
+      throw new Error(
+        `Section ${section} supports a maximum of ${MAX_GALLERY_IMAGES} images.`
+      );
+    }
+  }
+
+  private toResponse(
+    image: Image
+  ): ImageResponse {
 
     return {
-      id: updatedImage.id,
-      url: updatedImage.url,
-      width: updatedImage.width,
-      height: updatedImage.height,
-      filename: updatedImage.filename,
-      section: updatedImage.section,
-      contentType: updatedImage.contentType,
-      size: updatedImage.size,
-    };
 
+      id:
+        image.id,
+
+      url:
+        image.url,
+
+      width:
+        image.width,
+
+      height:
+        image.height,
+
+      filename:
+        image.filename,
+
+      section:
+        image.section,
+
+      position:
+        image.position,
+
+      contentType:
+        image.contentType,
+
+      size:
+        image.size,
+    };
   }
-}                 
+}
+
+
+function createImageStoragePath(
+  organizationSlug: string,
+  section: string,
+  position: number
+): {
+  folder: string;
+  publicId: string;
+} {
+
+  if (
+    SINGLE_IMAGE_SECTIONS.has(section)
+  ) {
+
+    return {
+      folder: organizationSlug,
+      publicId: section,
+    };
+  }
+
+  return {
+    folder:
+      `${organizationSlug}/${section}`,
+
+    publicId:
+      `slot-${String(position).padStart(2, "0")}`,
+  };
+}

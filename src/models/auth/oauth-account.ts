@@ -9,9 +9,7 @@ export interface OAuthAccount {
 
   accessToken?: string;
 
-  refreshToken?: string;
-
-  expiresAt?: string;
+  refreshToken?: string;  
 
   createdAt: string;
 

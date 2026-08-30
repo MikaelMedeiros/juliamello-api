@@ -11,8 +11,8 @@ export class CloudinaryImageStorageRepository
   ) {}
 
   async upload(
-    key: string,
-    folder: string,
+    publicId: string,  
+    folder: string,  
     file: File
   ): Promise<ImageStorageResult> {
 
@@ -36,7 +36,7 @@ export class CloudinaryImageStorageRepository
       "timestamp",
       timestamp.toString()
     );
-
+    
     formData.append(
       "folder",
       folder
@@ -44,14 +44,27 @@ export class CloudinaryImageStorageRepository
 
     formData.append(
       "public_id",
-      key
+      publicId
     );
 
-    const signature = await this.generateSignature({
-      folder,
-      public_id: key,
-      timestamp: timestamp.toString(),
-    });
+    formData.append(
+      "overwrite",
+      "true"
+    );
+
+    formData.append(
+      "invalidate",
+      "true"
+    );
+
+    const signature =
+      await this.generateSignature({
+        folder,
+        invalidate: "true",
+        overwrite: "true",
+        public_id: publicId,
+        timestamp: timestamp.toString(),
+      });
 
     formData.append(
       "signature",
@@ -90,12 +103,14 @@ export class CloudinaryImageStorageRepository
 
     const timestamp = Math.floor(
       Date.now() / 1000
-    );
+    );   
 
-    const signature = await this.generateSignature({
-      public_id: key,
-      timestamp: timestamp.toString(),
-    });
+    const signature =
+      await this.generateSignature({        
+        invalidate: "true",        
+        public_id: key,
+        timestamp: timestamp.toString(),
+      });
 
     const formData = new FormData();
 
@@ -115,9 +130,15 @@ export class CloudinaryImageStorageRepository
     );
 
     formData.append(
+      "invalidate",
+      "true"
+    );
+
+    formData.append(
       "signature",
       signature
     );
+    
 
     const response = await fetch(
       `https://api.cloudinary.com/v1_1/${this.cloudName}/image/destroy`,

@@ -26,9 +26,10 @@ export class D1ImageRepository
           content_type,
           size,
           section,
+          position,
           created_at
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `)
       .bind(
         image.id,
@@ -42,6 +43,7 @@ export class D1ImageRepository
         image.contentType,
         image.size,
         image.section,
+        image.position,
         image.createdAt
       )
       .run();
@@ -67,33 +69,69 @@ export class D1ImageRepository
           content_type,
           size,
           section,
+          position,
           created_at
         FROM images
         WHERE id = ?
           AND organization_id = ?
           AND user_id = ?
       `)
-      .bind(id, organizationId, userId)
+      .bind(
+        id,
+        organizationId,
+        userId
+      )
       .first();
 
     if (!result) {
       return null;
     }
 
-    return {
-      id: result.id as string,
-      organizationId: result.organization_id as string,
-      userId: result.user_id as string,
-      key: result.key as string,
-      url: result.url as string,
-      width: result.width as number,
-      height: result.height as number,
-      filename: result.filename as string,
-      contentType: result.content_type as string,
-      size: result.size as number,
-      section: result.section as string,
-      createdAt: result.created_at as string,
-    };
+    return this.mapImage(result);
+  }
+
+  async findBySlot(
+    section: string,
+    position: number,
+    organizationId: string,
+    userId: string
+  ): Promise<Image | null> {
+
+    const result = await this.db
+      .prepare(`
+        SELECT
+          id,
+          organization_id,
+          user_id,
+          key,
+          url,
+          width,
+          height,
+          filename,
+          content_type,
+          size,
+          section,
+          position,
+          created_at
+        FROM images
+        WHERE section = ?
+          AND position = ?
+          AND organization_id = ?
+          AND user_id = ?
+      `)
+      .bind(
+        section,
+        position,
+        organizationId,
+        userId
+      )
+      .first();
+
+    if (!result) {
+      return null;
+    }
+
+    return this.mapImage(result);
   }
 
   async findBySection(
@@ -101,6 +139,7 @@ export class D1ImageRepository
     organizationId: string,
     userId: string
   ): Promise<Image[]> {
+
     const results = await this.db
       .prepare(`
         SELECT
@@ -115,29 +154,24 @@ export class D1ImageRepository
           content_type,
           size,
           section,
+          position,
           created_at
         FROM images
         WHERE section = ?
           AND organization_id = ?
           AND user_id = ?
+        ORDER BY position ASC
       `)
-      .bind(section, organizationId, userId)
+      .bind(
+        section,
+        organizationId,
+        userId
+      )
       .all();
 
-    return results.results.map((result: any) => ({
-      id: result.id as string,
-      organizationId: result.organization_id as string,
-      userId: result.user_id as string,
-      key: result.key as string,
-      url: result.url as string,
-      width: result.width as number,
-      height: result.height as number,
-      filename: result.filename as string,
-      contentType: result.content_type as string,
-      size: result.size as number,
-      section: result.section as string,
-      createdAt: result.created_at as string,
-    }));
+    return results.results.map(
+      (result: any) => this.mapImage(result)
+    );
   }
 
   async delete(
@@ -153,49 +187,82 @@ export class D1ImageRepository
           AND organization_id = ?
           AND user_id = ?
       `)
-      .bind(id, organizationId, userId)
+      .bind(
+        id,
+        organizationId,
+        userId
+      )
       .run();
   }
 
   async update(
     image: Image
-  ): Promise<Image | null> {  
+  ): Promise<Image | null> {
 
     const result = await this.db
       .prepare(`
         UPDATE images
         SET
-          key = ?,
           url = ?,
           width = ?,
           height = ?,
           filename = ?,
           content_type = ?,
-          size = ?,
-          section = ?
+          size = ?
         WHERE id = ?
           AND organization_id = ?
           AND user_id = ?
       `)
       .bind(
-        image.key,
         image.url,
         image.width,
         image.height,
         image.filename,
         image.contentType,
         image.size,
-        image.section,
         image.id,
         image.organizationId,
         image.userId
       )
       .run();
 
-    if (!result) {
+    if (result.meta.changes === 0) {
       return null;
     }
 
     return image;
+  }
+
+  private mapImage(
+    result: Record<string, unknown>
+  ): Image {
+
+    return {
+      id: result.id as string,
+      organizationId:
+        result.organization_id as string,
+      userId:
+        result.user_id as string,
+      key:
+        result.key as string,
+      url:
+        result.url as string,
+      width:
+        result.width as number,
+      height:
+        result.height as number,
+      filename:
+        result.filename as string,
+      contentType:
+        result.content_type as string,
+      size:
+        result.size as number,
+      section:
+        result.section as string,
+      position:
+        result.position as number,
+      createdAt:
+        result.created_at as string,
+    };
   }
 }

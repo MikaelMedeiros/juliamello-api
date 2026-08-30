@@ -2,7 +2,7 @@ import { AppException } from "../exceptions/app.exception";
 
 export class ImageUploadValidator {
 
-  static validate(file: File, section: string): void {
+  static validate(file: File , section: string): void {
 
     const allowedTypes = [
       "image/jpeg",
