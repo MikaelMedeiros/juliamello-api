@@ -6,7 +6,7 @@ import { ImageRepository } from "../repositories/image-upload/image.repository";
 const SINGLE_IMAGE_SECTIONS =
   new Set([
     "banner",
-    "social-proof",
+    "avatar-chat",
     "about",
   ]);
 
