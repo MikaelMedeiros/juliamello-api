@@ -2,12 +2,14 @@ import { AppException } from "../exceptions/app.exception";
 
 export class ImageUploadValidator {
 
-  static validate(file: File , section: string): void {
+  static validate(file: File , section: string, position: number): void {
 
     const allowedTypes = [
-      "image/jpeg",
-      "image/png",
-      "image/webp",
+      'image/jpeg',
+      'image/png',
+      'image/webp',
+      'image/heic',
+      'image/heif'
     ];
 
     const allowedSections = [
@@ -53,12 +55,28 @@ export class ImageUploadValidator {
       );
     }
 
+    const maxPosition = 12; // Maximum position allowed
+    const minPosition = 1; // Minimum position allowed
 
-    const maxSize = 10 * 1024 * 1024;
+    if (
+      !Number.isInteger(position) ||
+      position < minPosition ||
+      position > maxPosition
+    ) {
+
+      throw new AppException(
+        "Posição de imagem inválida.",
+        400
+      );
+    }
+
+
+    const maxSize = 5 * 1024 * 1024;
+    
 
     if (file.size > maxSize) {
       throw new AppException(
-        "Arquivo muito grande. Limite de 10MB.",
+        "Arquivo muito grande. Limite de 5MB.",
         400
       );
     }

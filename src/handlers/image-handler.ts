@@ -12,6 +12,9 @@ export async function uploadImage(
   context: RequestContext
 ): Promise<Response> {
 
+  const maxFileSizeInBytes = 5 * 1024 * 1024; // 5MB
+ 
+
   const {
     request,
     env,
@@ -35,24 +38,6 @@ export async function uploadImage(
     const position =
       Number(context.params[2]);
 
-
-    // ==========================================================
-    // Validação da posição
-    // ==========================================================
-
-    if (
-      !Number.isInteger(position) ||
-      position < 1 ||
-      position > 12
-    ) {
-
-      throw new AppException(
-        "Posição de imagem inválida.",
-        400
-      );
-    }
-
-
     // ==========================================================
     // Arquivo
     // ==========================================================
@@ -71,14 +56,14 @@ export async function uploadImage(
       );
     }
 
-
     // ==========================================================
     // Validação do arquivo
     // ==========================================================
 
     ImageUploadValidator.validate(
       file,
-      section
+      section,
+      position
     );
 
 
