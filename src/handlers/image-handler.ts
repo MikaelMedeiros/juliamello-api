@@ -12,9 +12,6 @@ export async function uploadImage(
   context: RequestContext
 ): Promise<Response> {
 
-  const maxFileSizeInBytes = 5 * 1024 * 1024; // 5MB
- 
-
   const {
     request,
     env,

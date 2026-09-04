@@ -4,8 +4,7 @@ import { ImageStorage } from "../repositories/image-upload/image-storage";
 import { ImageRepository } from "../repositories/image-upload/image.repository";
 
 const SINGLE_IMAGE_SECTIONS =
-  new Set([
-    "banner",
+  new Set([    
     "avatar-chat",
     "about",
   ]);
