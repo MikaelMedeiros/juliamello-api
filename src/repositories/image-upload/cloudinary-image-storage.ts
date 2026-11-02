@@ -1,5 +1,6 @@
 import { ImageStorage } from "./image-storage";
 import { ImageStorageResult } from "./model/image-storage-result.model";
+import { ImageUploadOptions } from "./model/image-upload-options.model";
 
 export class CloudinaryImageStorageRepository
   implements ImageStorage {
@@ -11,10 +12,11 @@ export class CloudinaryImageStorageRepository
   ) {}
 
   async upload(
-    publicId: string,  
-    folder: string,  
-    file: File
+    file: File,
+    options: ImageUploadOptions
   ): Promise<ImageStorageResult> {
+
+    const { publicId, folder } = options;
 
     const timestamp = Math.floor(
       Date.now() / 1000

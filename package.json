@@ -17,6 +17,8 @@
     "wrangler": "^4.105.0"
   },
   "dependencies": {
-    "jose": "^6.2.3"
+    "image-size": "^2.0.4",
+    "jose": "^6.2.3",
+    "octokit": "^4.1.4"
   }
 }

@@ -16,6 +16,24 @@ export function handleError(
     );
   }
 
+  if (
+    error instanceof Error &&
+    "expose" in error &&
+    error.expose === true &&
+    "status" in error &&
+    typeof error.status === "number" &&
+    error.status >= 400 &&
+    error.status <= 599
+  ) {
+    return json(
+      {
+        error: error.message
+      },
+      corsHeaders,
+      error.status
+    );
+  }
+
   console.error(error);
 
   return json(

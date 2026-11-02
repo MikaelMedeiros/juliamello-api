@@ -1,14 +1,4 @@
-import { ImageStorageResult } from "./model/image-storage-result.model";
+import { ImageUploader } from "./image-uploader";
+import { ImageDeleter } from "./image-deleter";
 
-export interface ImageStorage {
-
-  upload(
-    publicId: string,
-    folder: string,
-    file: File
-  ): Promise<ImageStorageResult>;
-
-  delete(
-    key: string
-  ): Promise<void>;
-}
+export interface ImageStorage extends ImageUploader, ImageDeleter {}

@@ -1,7 +1,8 @@
 import { Image } from "../models/image";
 import { ImageResponse } from "../models/image.response";
-import { ImageStorage } from "../repositories/image-upload/image-storage";
+import { ImageDeleter } from "../repositories/image-upload/image-deleter";
 import { ImageRepository } from "../repositories/image-upload/image.repository";
+import { ImageUploader } from "../repositories/image-upload/image-uploader";
 
 const SINGLE_IMAGE_SECTIONS =
   new Set([    
@@ -14,7 +15,8 @@ const MAX_GALLERY_IMAGES = 12;
 export class ImageService {
 
   constructor(
-    private readonly storage: ImageStorage,
+    private readonly uploader: ImageUploader,
+    private readonly deleter: ImageDeleter,
     private readonly repository: ImageRepository
   ) {}
 
@@ -65,10 +67,9 @@ export class ImageService {
     // --------------------------------------------------------
 
     const storageResult =
-      await this.storage.upload(
-        storagePath.publicId,
-        storagePath.folder,
-        file
+      await this.uploader.upload(
+        file,
+        storagePath
       );
 
     const image: Image = {
@@ -150,6 +151,10 @@ export class ImageService {
         );
       }
 
+      if (existingImage.key !== image.key) {
+        await this.deleter.delete(existingImage.key);
+      }
+
       return this.toResponse(
         updated
       );
@@ -201,7 +206,7 @@ export class ImageService {
       return;
     }
 
-    await this.storage.delete(
+    await this.deleter.delete(
       image.key
     );
 

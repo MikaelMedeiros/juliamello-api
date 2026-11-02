@@ -1,8 +1,11 @@
 import { RequestContext } from "../context";
 import { AppException } from "../exceptions/app.exception";
 import { handleError } from "../exceptions/erro.handler";
-import { CloudinaryImageStorageRepository } from "../repositories/image-upload/cloudinary-image-storage";
 import { D1ImageRepository } from "../repositories/image-upload/d1-image.repository";
+import {
+  createImageDeleter,
+  createImageUploader,
+} from "../repositories/image-upload/image-storage.factory";
 
 import { json, noContent } from "../response";
 import { ImageService } from "../services/image.service";
@@ -68,19 +71,7 @@ export async function uploadImage(
     // Service
     // ==========================================================
 
-    const service =
-      new ImageService(
-
-        new CloudinaryImageStorageRepository(
-          env.CLOUDINARY_CLOUD_NAME,
-          env.CLOUDINARY_API_KEY,
-          env.CLOUDINARY_API_SECRET
-        ),
-
-        new D1ImageRepository(
-          env.app_db
-        )
-      );
+    const service = createImageService(env);
 
 
     // ==========================================================
@@ -132,16 +123,7 @@ export async function getImagesBySection(
   try {
     const section = context.params[1];
 
-    const service = new ImageService(
-      new CloudinaryImageStorageRepository(
-        env.CLOUDINARY_CLOUD_NAME,
-        env.CLOUDINARY_API_KEY,
-        env.CLOUDINARY_API_SECRET
-      ),
-      new D1ImageRepository(env.app_db)
-    );     
-
-    const images = await service.findBySection(
+    const images = await new D1ImageRepository(env.app_db).findBySection(
       section,
       context.user?.organizationId ?? "default",
       context.user?.id ?? "default"
@@ -188,19 +170,7 @@ export async function deleteImage(
       );
     }
 
-    const service =
-      new ImageService(
-
-        new CloudinaryImageStorageRepository(
-          env.CLOUDINARY_CLOUD_NAME,
-          env.CLOUDINARY_API_KEY,
-          env.CLOUDINARY_API_SECRET
-        ),
-
-        new D1ImageRepository(
-          env.app_db
-        )
-      );
+    const service = createImageService(env);
 
     await service.deleteBySlot(
       section,
@@ -222,4 +192,12 @@ export async function deleteImage(
       corsHeaders
     );
   }
+}
+
+function createImageService(env: Cloudflare.Env): ImageService {
+  return new ImageService(
+    createImageUploader(env),
+    createImageDeleter(env),
+    new D1ImageRepository(env.app_db)
+  );
 }
